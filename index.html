@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Monitor Router</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 700px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background: #f0f0f0;
+        }
+        h1 { text-align: center; }
+        .estado {
+            text-align: center;
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
+        .on { color: green; }
+        .off { color: red; }
+        .info {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .info span { font-weight: bold; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th { background: #333; color: white; }
+        .vacio { text-align: center; color: #999; padding: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Router ZTE F6600</h1>
+    <div class="estado" id="estado">Conectando...</div>
+
+    <div class="info">
+        Latencia: <span id="latencia">-</span> ms |
+        Perdida: <span id="perdida">-</span>% |
+        Dispositivos: <span id="cantidad">-</span>
+    </div>
+
+    <table>
+        <tr>
+            <th>IP</th>
+            <th>Nombre</th>
+            <th>MAC</th>
+        </tr>
+    </table>
+    <div id="tabla"></div>
+
+    <script>
+        function cargar() {
+            fetch("/api")
+                .then(r => r.json())
+                .then(d => {
+                    document.getElementById("estado").className = d.online ? "on" : "off";
+                    document.getElementById("estado").textContent = d.online ? "ONLINE" : "OFFLINE";
+                    document.getElementById("latencia").textContent = d.latency;
+                    document.getElementById("perdida").textContent = d.packet_loss;
+                    document.getElementById("cantidad").textContent = d.device_count;
+
+                    var html = "<table><tr><th>IP</th><th>Nombre</th><th>MAC</th></tr>";
+                    if (d.devices && d.devices.length > 0) {
+                        d.devices.forEach(function(dev) {
+                            html += "<tr><td>" + dev.IPAddress + "</td><td>" +
+                                (dev.HostName || "?") + "</td><td>" + dev.MACAddress + "</td></tr>";
+                        });
+                    } else {
+                        html += "<tr><td colspan='3' class='vacio'>Sin dispositivos</td></tr>";
+                    }
+                    html += "</table>";
+                    document.getElementById("tabla").innerHTML = html;
+                })
+                .catch(function() {
+                    document.getElementById("estado").textContent = "Error de conexion";
+                });
+        }
+        cargar();
+        setInterval(cargar, 5000);
+    </script>
+</body>
+</html>
